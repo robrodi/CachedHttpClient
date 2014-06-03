@@ -20,11 +20,10 @@
     [Trait("Basic Http Client", "")]
     public class Tests : IDisposable
     {
-        private TestServer server;
+        private readonly TestServer server;
 
         private const string IndexPath = "/";
-        private Uri IndexUri = new Uri(IndexPath, UriKind.Relative);
-
+        private static readonly Uri IndexUri = new Uri(IndexPath, UriKind.Relative);
 
         public Tests()
         {
@@ -84,15 +83,15 @@
                 
                 var client = new CachedHttpClient(testServer.HttpClient, mockCache.Object);
                 var result = client.GetAsync(IndexUri).Result;
-                result.StatusCode.Should().Be(HttpStatusCode.OK);
+                result.StatusCode.Should().Be(HttpStatusCode.OK, "Should have succeeded on first request");
                 result.WasCached.Should().BeFalse("should not yet be cached.");
                 mockCache.Verify();
 
                 mockCache.Setup(mc => mc.Contains(IndexPath, null)).Returns(true);
                 mockCache.Setup(mc => mc[IndexPath]).Returns(null);
                 
-                var result2 = client.GetAsync(IndexUri).Result;
-                result.StatusCode.Should().Be(HttpStatusCode.OK);
+                client.GetAsync(IndexUri).Wait();
+                result.StatusCode.Should().Be(HttpStatusCode.OK, "Should have succeeded on second request");
                 result.WasCached.Should().BeFalse("should not yet be cached.");
             }
         }
