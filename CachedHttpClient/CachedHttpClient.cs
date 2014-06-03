@@ -9,15 +9,16 @@
 
     public class CachedHttpClient
     {
+        private readonly HttpClient client;
+
         private static readonly ObjectCache _cache;
+
         private readonly ObjectCache _instanceCache;
 
         static CachedHttpClient()
         {
             _cache = new MemoryCache("CachedHttp");
         }
-
-        private readonly HttpClient client;
 
         public CachedHttpClient()
             : this(new HttpClient())
@@ -30,7 +31,8 @@
             this._instanceCache = objectCache ?? _cache;
         }
 
-        private ObjectCache cache {
+        private ObjectCache cache
+        {
             get
             {
                 return this._instanceCache ?? Cache;
@@ -49,6 +51,7 @@
         {
             return this.GetAsync(requestUri, CancellationToken.None);
         }
+
         public async Task<Result> GetAsync(string requestUri, CancellationToken cancellationToken)
         {
             if (this.cache.Contains(requestUri))
@@ -67,6 +70,55 @@
             }
 
             return new Result(result.Content.ToString(), result.StatusCode, false);
+        }
+
+        public Task<HttpResponseMessage> PostAsync(string requestUri, HttpContent content)
+        {
+            return this.PostAsync(requestUri, content, CancellationToken.None);
+        }
+
+        public async Task<HttpResponseMessage> PostAsync(string requestUri, HttpContent content, CancellationToken cancellationToken)
+        {
+            var result = await client.PostAsync(requestUri, content, cancellationToken);
+            this.ClearCacheKeyIfSuccessful(requestUri, result);
+            return result;
+        }
+
+        private void ClearCacheKeyIfSuccessful(string requestUri, HttpResponseMessage result)
+        {
+            if (result.IsSuccessStatusCode)
+            {
+                this.cache.Remove(requestUri);
+            }
+        }
+
+        public Task<HttpResponseMessage> PutAsync(string requestUri, HttpContent content)
+        {
+            return this.PutAsync(requestUri, content, CancellationToken.None);
+        }
+
+        public async Task<HttpResponseMessage> PutAsync(string requestUri, HttpContent content, CancellationToken cancellationToken)
+        {
+            var result = await client.PostAsync(requestUri, content, cancellationToken);
+            this.ClearCacheKeyIfSuccessful(requestUri, result);
+            return result;
+        }
+
+        public Task<HttpResponseMessage> DeleteAsync(string requestUri)
+        {
+            return this.DeleteAsync(requestUri, CancellationToken.None);
+        }
+
+        public async Task<HttpResponseMessage> DeleteAsync(string requestUri, CancellationToken cancellationToken)
+        {
+            var result = await client.DeleteAsync(requestUri, cancellationToken);
+            this.ClearCacheKeyIfSuccessful(requestUri, result);
+            return result;
+        }
+
+        public void CancelPendingRequests()
+        {
+            client.CancelPendingRequests();
         }
     }
 }
