@@ -108,7 +108,7 @@
             }
 
             var result = await this.client.GetAsync(requestUri, cancellationToken);
-            if (result.StatusCode == HttpStatusCode.OK)
+            if (result.IsSuccessStatusCode)
             {
                 if (result.Headers.CacheControl != null && !result.Headers.CacheControl.Private && result.Headers.CacheControl.MaxAge.HasValue && result.Headers.CacheControl.MaxAge > TimeSpan.Zero)
                 {
