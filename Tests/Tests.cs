@@ -56,6 +56,32 @@
             result2.WasCached.Should().BeTrue("should be cached");
         }
 
+        [Fact(DisplayName = "Caches Separate Uris Separately")]
+        public void CachedConnectMultipleUris()
+        {
+            CachedHttpClient.Cache.Remove(IndexPath);
+
+            var mockCache = new Mock<ObjectCache>();
+            //cache.Set(new CacheItem(requestUri, result.Content.ToString()), new CacheItemPolicy { AbsoluteExpiration = DateTimeOffset.UtcNow.Add(result.Headers.CacheControl.MaxAge.Value) });
+            mockCache.Setup(mc => mc.Contains(IndexPath, null)).Returns(false);
+            mockCache.Setup(mc => mc.Contains("/HelloWorld", null)).Returns(false);
+            
+            mockCache.Setup(m => m.Set(It.IsAny<CacheItem>(), It.Is<CacheItemPolicy>(cip => cip.AbsoluteExpiration < DateTimeOffset.UtcNow.AddMilliseconds(1001) && cip.AbsoluteExpiration > DateTimeOffset.UtcNow.AddMilliseconds(900)))).Verifiable("Didn't add to cache");
+            It.Is<CacheItemPolicy>(cip => cip.AbsoluteExpiration < DateTimeOffset.UtcNow.AddMilliseconds(1001) && cip.AbsoluteExpiration > DateTimeOffset.UtcNow.AddMilliseconds(900));
+            var client = new CachedHttpClient(this.server.HttpClient);
+            var result = client.GetAsync(IndexUri).Result;
+            result.StatusCode.Should().Be(HttpStatusCode.OK);
+            result.WasCached.Should().BeFalse("should not yet be cached.");
+
+            var result2 = client.GetAsync(new Uri("/HelloWorld", UriKind.Relative)).Result;
+            result2.StatusCode.Should().Be(HttpStatusCode.OK, "Should be ok");
+            result2.WasCached.Should().BeFalse("should not be cached");
+
+            CachedHttpClient.Cache.GetCount().Should().Be(2);
+            CachedHttpClient.Cache[IndexPath].Should().NotBeNull("Should contain entry");
+            CachedHttpClient.Cache["/HelloWorld"].Should().NotBeNull("Should contain entry");
+        }
+
         [Fact(DisplayName = "Does not cache Max-Age of Zero")]
         public void DoNotCacheMaxAgeOfZero()
         {
