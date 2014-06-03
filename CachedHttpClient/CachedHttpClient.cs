@@ -211,9 +211,15 @@
             client.CancelPendingRequests();
         }
 
-        private static void ClearCacheKeyIfSuccessful(Uri requestUri, HttpResponseMessage result, ObjectCache cache)
+        /// <summary>
+        /// Clears the cache key if the <paramref name="response"/> was successful.
+        /// </summary>
+        /// <param name="requestUri">The request URI.</param>
+        /// <param name="response">The result.</param>
+        /// <param name="cache">The cache.</param>
+        private static void ClearCacheKeyIfSuccessful(Uri requestUri, HttpResponseMessage response, ObjectCache cache)
         {
-            if (result.IsSuccessStatusCode)
+            if (response.IsSuccessStatusCode)
             {
                 cache.Remove(requestUri.ToString());
             }
