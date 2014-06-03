@@ -10,6 +10,7 @@
     /// <summary>
     /// Uses <see cref="HttpClient"/> to make requests, and caches requests using a .net <see cref="ObjectCache"/>.
     /// </summary>
+    /// <remarks>Currently text only.</remarks>
     public class CachedHttpClient
     {
         private readonly HttpClient client;
