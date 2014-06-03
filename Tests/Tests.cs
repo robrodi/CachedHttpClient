@@ -2,6 +2,7 @@
 {
     using System;
     using System.Net;
+    using System.Net.Http;
     using System.Runtime.Caching;
     using System.Threading.Tasks;
 
@@ -89,6 +90,67 @@
                 var result2 = client.GetAsync("/").Result;
                 result.StatusCode.Should().Be(HttpStatusCode.OK);
                 result.WasCached.Should().BeFalse("should not yet be cached.");
+            }
+        }
+
+        [Fact(DisplayName = "Deletes purge cache")]
+        public void DeleteClearsCache()
+        {
+            var mockCache = new Mock<ObjectCache>(MockBehavior.Strict);
+            //cache.Set(new CacheItem(requestUri, result.Content.ToString()), new CacheItemPolicy { AbsoluteExpiration = DateTimeOffset.UtcNow.Add(result.Headers.CacheControl.MaxAge.Value) });
+            mockCache.Setup(mc => mc.Contains("/", null)).Returns(false);
+            mockCache.Setup(m => m.Set(It.IsAny<CacheItem>(), It.Is<CacheItemPolicy>(cip => cip.AbsoluteExpiration < DateTimeOffset.UtcNow.AddMilliseconds(1001) && cip.AbsoluteExpiration > DateTimeOffset.UtcNow.AddMilliseconds(900)))).Verifiable("Didn't add to cache");
+            mockCache.Setup(m => m.Remove("/", null)).Returns(null).Verifiable("didn't delete from cache");
+
+            using (var testServer = SingleApiServer(1))
+            {
+                var client = new CachedHttpClient(testServer.HttpClient, mockCache.Object);
+                var result = client.GetAsync("/").Result;
+                result.StatusCode.Should().Be(HttpStatusCode.OK);
+                result.WasCached.Should().BeFalse("should not yet be cached.");
+
+                var result2 = client.DeleteAsync("/").Result;
+                mockCache.Verify();
+            }
+        }
+
+        [Fact(DisplayName = "Post purge cache")]
+        public void PostClearsCache()
+        {
+            var mockCache = new Mock<ObjectCache>(MockBehavior.Strict);
+            //cache.Set(new CacheItem(requestUri, result.Content.ToString()), new CacheItemPolicy { AbsoluteExpiration = DateTimeOffset.UtcNow.Add(result.Headers.CacheControl.MaxAge.Value) });
+            mockCache.Setup(mc => mc.Contains("/", null)).Returns(false);
+            mockCache.Setup(m => m.Set(It.IsAny<CacheItem>(), It.Is<CacheItemPolicy>(cip => cip.AbsoluteExpiration < DateTimeOffset.UtcNow.AddMilliseconds(1001) && cip.AbsoluteExpiration > DateTimeOffset.UtcNow.AddMilliseconds(900)))).Verifiable("Didn't add to cache");
+            mockCache.Setup(m => m.Remove("/", null)).Returns(null).Verifiable("didn't delete from cache");
+
+            using (var testServer = SingleApiServer(1))
+            {
+                var client = new CachedHttpClient(testServer.HttpClient, mockCache.Object);
+                var result = client.GetAsync("/").Result;
+                result.StatusCode.Should().Be(HttpStatusCode.OK);
+                result.WasCached.Should().BeFalse("should not yet be cached.");
+                var result2 = client.PostAsync("/", new StringContent("HI")).Result;
+                mockCache.Verify();
+            }
+        }
+
+        [Fact(DisplayName = "Put purge cache")]
+        public void PutClearsCache()
+        {
+            var mockCache = new Mock<ObjectCache>(MockBehavior.Strict);
+            //cache.Set(new CacheItem(requestUri, result.Content.ToString()), new CacheItemPolicy { AbsoluteExpiration = DateTimeOffset.UtcNow.Add(result.Headers.CacheControl.MaxAge.Value) });
+            mockCache.Setup(mc => mc.Contains("/", null)).Returns(false);
+            mockCache.Setup(m => m.Set(It.IsAny<CacheItem>(), It.Is<CacheItemPolicy>(cip => cip.AbsoluteExpiration < DateTimeOffset.UtcNow.AddMilliseconds(1001) && cip.AbsoluteExpiration > DateTimeOffset.UtcNow.AddMilliseconds(900)))).Verifiable("Didn't add to cache");
+            mockCache.Setup(m => m.Remove("/", null)).Returns(null).Verifiable("didn't delete from cache");
+
+            using (var testServer = SingleApiServer(1))
+            {
+                var client = new CachedHttpClient(testServer.HttpClient, mockCache.Object);
+                var result = client.GetAsync("/").Result;
+                result.StatusCode.Should().Be(HttpStatusCode.OK);
+                result.WasCached.Should().BeFalse("should not yet be cached.");
+                var result2 = client.PutAsync("/", new StringContent("HI")).Result;
+                mockCache.Verify();
             }
         }
 
