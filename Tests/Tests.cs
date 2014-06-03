@@ -97,7 +97,7 @@
             }
         }
 
-        [Fact(DisplayName = "Deletes purge cache")]
+        [Fact(DisplayName = "Deletes purges cache")]
         public void DeleteClearsCache()
         {
             var mockCache = new Mock<ObjectCache>(MockBehavior.Strict);
@@ -118,7 +118,7 @@
             }
         }
 
-        [Fact(DisplayName = "Post purge cache")]
+        [Fact(DisplayName = "Post purges cache")]
         public void PostClearsCache()
         {
             var mockCache = new Mock<ObjectCache>(MockBehavior.Strict);
@@ -138,7 +138,7 @@
             }
         }
 
-        [Fact(DisplayName = "Put purge cache")]
+        [Fact(DisplayName = "Put purges cache")]
         public void PutClearsCache()
         {
             var mockCache = new Mock<ObjectCache>(MockBehavior.Strict);
